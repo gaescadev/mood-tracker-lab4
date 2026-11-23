@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/mood_entry.dart';
 import '../widgets/mood_card.dart';
 import '../widgets/mood_summary.dart';
+import '../widgets/mood_entry_form.dart';
 
 /// The home screen: a summary card followed by the history of entries.
 ///
@@ -41,6 +42,8 @@ class HomeScreen extends StatelessWidget {
                 //   (add: import '../widgets/mood_entry_form.dart';)
                 //   HomeScreen is stateless, yet the form inside it will
                 //   remember a selection. Where does that state live?
+                MoodEntryForm(onSubmit: (entry) {}),
+                const SizedBox(height: 16),
                 MoodSummary(entries: entries),
                 const SizedBox(height: 24),
                 Text('History', style: Theme.of(context).textTheme.titleMedium),
