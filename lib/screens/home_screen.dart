@@ -20,10 +20,29 @@ import '../widgets/mood_entry_form.dart';
 ///   4. Pass _addEntry to the form's onSubmit, and build the summary and
 ///      the cards from _entries.
 ///   Then save an entry: do the history and the average both update?
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.entries});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, required this.initialEntries});
 
-  final List<MoodEntry> entries;
+  final List<MoodEntry> initialEntries;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final List<MoodEntry> _entries;
+
+  @override
+  void initState() {
+    super.initState();
+    _entries = List.of(widget.initialEntries);
+  }
+
+  void _addEntry(MoodEntry entry) {
+    setState(() {
+      _entries.insert(0, entry);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,13 +61,13 @@ class HomeScreen extends StatelessWidget {
                 //   (add: import '../widgets/mood_entry_form.dart';)
                 //   HomeScreen is stateless, yet the form inside it will
                 //   remember a selection. Where does that state live?
-                MoodEntryForm(onSubmit: (entry) {}),
+                MoodEntryForm(onSubmit: _addEntry),
                 const SizedBox(height: 16),
-                MoodSummary(entries: entries),
+                MoodSummary(entries: _entries),
                 const SizedBox(height: 24),
                 Text('History', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                for (final entry in entries) MoodCard(entry: entry),
+                for (final entry in _entries) MoodCard(entry: entry),
               ],
             ),
           ),

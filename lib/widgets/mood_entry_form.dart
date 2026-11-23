@@ -24,12 +24,32 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
   // TODO 2.1: Declare a TextEditingController for the note. Override
   //   dispose() and call _noteController.dispose() before super.dispose().
   //   Why does a controller need disposing when an int does not?
+  final _noteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
 
   // TODO 2.3: Write a _save() method that:
   //   1. creates a MoodEntry with the selected score, the trimmed note
   //      (or null if the trimmed note is empty) and DateTime.now()
   //   2. passes the entry to widget.onSubmit
   //   3. clears the form: no score selected and an empty note
+  void _save() {
+    final note = _noteController.text.trim();
+    final entry = MoodEntry(
+      score: _score!,
+      note: note.isEmpty ? null : note,
+      createdAt: DateTime.now(),
+    );
+    widget.onSubmit(entry);
+    setState(() {
+      _score = null;
+      _noteController.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +81,17 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
             // TODO 2.3 (continued): Add a FilledButton labelled 'Save entry'
             //   that calls _save. While no score is selected, pass
             //   onPressed: null so that the button is disabled.
+            const SizedBox(height: 12),
+            TextField(
+              controller: _noteController,
+              maxLength: maxNoteLength,
+              decoration: const InputDecoration(labelText: 'Note (optional)'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: _score == null ? null : _save,
+              child: const Text('Save entry'),
+            ),
           ],
         ),
       ),
