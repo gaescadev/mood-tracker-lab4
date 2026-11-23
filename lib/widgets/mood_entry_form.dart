@@ -19,6 +19,7 @@ class MoodEntryForm extends StatefulWidget {
 class _MoodEntryFormState extends State<MoodEntryForm> {
   // TODO 1.3: Declare the selected score. It starts with nothing selected:
   //   int? _score;
+  int? _score;
 
   // TODO 2.1: Declare a TextEditingController for the note. Override
   //   dispose() and call _noteController.dispose() before super.dispose().
@@ -46,7 +47,14 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
             // TODO 1.3 (continued): Pass _score instead of null. In
             //   onChanged, store the tapped score inside setState(() { ... }).
             //   Then try it without setState. What happens, and why?
-            MoodScoreSelector(selectedScore: null, onChanged: (_) {}),
+            MoodScoreSelector(
+              selectedScore: _score,
+              onChanged: (score) {
+                setState(() {
+                  _score = score;
+                });
+              },
+            ),
             // TODO 2.2: Add a TextField for the note that uses your
             //   controller, labelled 'Note (optional)' (InputDecoration).
             //
