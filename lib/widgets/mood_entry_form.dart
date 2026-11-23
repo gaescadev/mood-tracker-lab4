@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/mood_entry.dart';
 import 'mood_score_selector.dart';
@@ -26,6 +27,9 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
   //   Why does a controller need disposing when an int does not?
   final _noteController = TextEditingController();
 
+  String? _scoreError;
+  String? _noteError;
+
   @override
   void dispose() {
     _noteController.dispose();
@@ -38,6 +42,14 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
   //   2. passes the entry to widget.onSubmit
   //   3. clears the form: no score selected and an empty note
   void _save() {
+    setState(() {
+      _scoreError = _score == null ? 'Choose a mood score from 1 to 10.' : null;
+      _noteError = _noteController.text.length > maxNoteLength
+          ? 'Notes can be at most $maxNoteLength characters.'
+          : null;
+    });
+    if (_scoreError != null || _noteError != null) return;
+
     final note = _noteController.text.trim();
     final entry = MoodEntry(
       score: _score!,
@@ -72,9 +84,18 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
               onChanged: (score) {
                 setState(() {
                   _score = score;
+                  _scoreError = null;
                 });
               },
             ),
+            if (_scoreError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  _scoreError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
             // TODO 2.2: Add a TextField for the note that uses your
             //   controller, labelled 'Note (optional)' (InputDecoration).
             //
@@ -85,11 +106,17 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
             TextField(
               controller: _noteController,
               maxLength: maxNoteLength,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              // Without this, the field cuts a pasted note to the limit
+              // silently, and the user never sees why text went missing.
+              maxLengthEnforcement: MaxLengthEnforcement.none,
+              decoration: InputDecoration(
+                labelText: 'Note (optional)',
+                errorText: _noteError,
+              ),
             ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: _score == null ? null : _save,
+              onPressed: _save,
               child: const Text('Save entry'),
             ),
           ],
