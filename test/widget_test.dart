@@ -20,16 +20,117 @@ Future<void> pumpApp(WidgetTester tester) async {
 
 Finder get saveButton => find.widgetWithText(FilledButton, 'Save entry');
 
+const scoreError = 'Choose a mood score from 1 to 10.';
+const noteError = 'Notes can be at most 2000 characters.';
+
+Future<void> tapScore(WidgetTester tester, int score) async {
+  await tester.tap(find.widgetWithText(ChoiceChip, '$score'));
+  await tester.pump();
+}
+
+Future<void> tapSave(WidgetTester tester) async {
+  await tester.tap(saveButton);
+  await tester.pump();
+}
+
+String noteText(WidgetTester tester) =>
+    tester.widget<TextField>(find.byType(TextField)).controller!.text;
+
+bool isScoreSelected(WidgetTester tester, int score) => tester
+    .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '$score'))
+    .selected;
+
+Finder historyCardWithText(String text) => find.descendant(
+      of: find.byType(MoodCard).first,
+      matching: find.text(text),
+    );
+
 void main() {
-  testWidgets('Save is disabled until a score is chosen', (tester) async {
+  testWidgets('saving without a score shows an error and adds nothing',
+      (tester) async {
     await pumpApp(tester);
 
-    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
-
-    await tester.tap(find.widgetWithText(ChoiceChip, '3'));
-    await tester.pump();
-
     expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+
+    await tapSave(tester);
+
+    expect(find.text(scoreError), findsOneWidget);
+    expect(find.byType(MoodCard), findsNWidgets(sampleEntries.length));
+  });
+
+  testWidgets('choosing a score hides the score error', (tester) async {
+    await pumpApp(tester);
+    await tapSave(tester);
+
+    await tapScore(tester, 7);
+
+    expect(find.text(scoreError), findsNothing);
+  });
+
+  testWidgets('a note of exactly the limit saves and clears the form',
+      (tester) async {
+    await pumpApp(tester);
+    await tapScore(tester, 5);
+    await tester.enterText(find.byType(TextField), 'a' * 2000);
+
+    await tapSave(tester);
+
+    expect(find.text(noteError), findsNothing);
+    expect(find.byType(MoodCard), findsNWidgets(sampleEntries.length + 1));
+    expect(historyCardWithText('a' * 2000), findsOneWidget);
+    expect(isScoreSelected(tester, 5), isFalse);
+    expect(noteText(tester), isEmpty);
+  });
+
+  testWidgets('a note over the limit shows an error and keeps the input',
+      (tester) async {
+    await pumpApp(tester);
+    await tapScore(tester, 5);
+    await tester.enterText(find.byType(TextField), 'a' * 2001);
+
+    await tapSave(tester);
+
+    expect(find.text(noteError), findsOneWidget);
+    expect(find.byType(MoodCard), findsNWidgets(sampleEntries.length));
+    expect(isScoreSelected(tester, 5), isTrue);
+    expect(noteText(tester).length, 2001);
+  });
+
+  testWidgets('shortening a long note lets the entry save', (tester) async {
+    await pumpApp(tester);
+    await tapScore(tester, 5);
+    await tester.enterText(find.byType(TextField), 'a' * 2001);
+    await tapSave(tester);
+
+    await tester.enterText(find.byType(TextField), 'a' * 2000);
+    await tapSave(tester);
+
+    expect(find.text(noteError), findsNothing);
+    expect(find.byType(MoodCard), findsNWidgets(sampleEntries.length + 1));
+    expect(historyCardWithText('a' * 2000), findsOneWidget);
+  });
+
+  testWidgets('no score and a long note show both errors', (tester) async {
+    await pumpApp(tester);
+    await tester.enterText(find.byType(TextField), 'a' * 2001);
+
+    await tapSave(tester);
+
+    expect(find.text(scoreError), findsOneWidget);
+    expect(find.text(noteError), findsOneWidget);
+    expect(find.byType(MoodCard), findsNWidgets(sampleEntries.length));
+  });
+
+  testWidgets('an empty note saves as "No note"', (tester) async {
+    await pumpApp(tester);
+    await tapScore(tester, 8);
+
+    await tapSave(tester);
+
+    expect(find.text(scoreError), findsNothing);
+    expect(find.text(noteError), findsNothing);
+    expect(find.byType(MoodCard), findsNWidgets(sampleEntries.length + 1));
+    expect(historyCardWithText('No note'), findsOneWidget);
   });
 
   testWidgets('saving an entry puts it at the top of the history',
